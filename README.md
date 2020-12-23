@@ -49,7 +49,7 @@ $$
     R &= VU^T \\
     t &= \bar{Q} - R\bar{P}
     \end{aligned} \right.
-\end{align*} 
+\end{align*}
 $$
 
 ## Point_to_Plane ICP
@@ -98,13 +98,9 @@ Weight $W_k(p)$
 $$
 W(p) = \frac{cos(\theta)}{dist(p)} \\
 $$
-![image-20201223172937627](/home/waveviewer/.config/Typora/typora-user-images/image-20201223172937627.png)
+$\theta$ is angle between normal vector and pixel ray
 
 ## Volume
-
-![image-20201223170715107](/home/waveviewer/.config/Typora/typora-user-images/image-20201223170715107.png)
-
-
 
 New frame arives
 
