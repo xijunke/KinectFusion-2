@@ -8,7 +8,9 @@ Depth = []
 frame_num = len(RGB)
 
 # Camera Intrinsic 3*3
-Intrinsic = np.eye(3)
+Intrinsic = np.array([[918.774170584315,	0,	0],
+                      [1.93012762035975,	921.829519864905,	0],
+                      [960.063190260167,	540.614346667332,	1]]).T
 inverse = np.linalg.inv(Intrinsic)
 
 AllFramesPointsCloud = []
@@ -25,16 +27,19 @@ for i in range(1, frame_num):
     AllFramesPointsCloud.append(points3D)
 
 # ICP find Trans between neighboring frames
-AllFramesPose = []
-for i in range(frame_num-1):
+AllFramesPose = [] # from world to frame i
+pose = ICP_point_to_point(AllFramesPointsCloud[0], AllFramesPointsCloud[1])
+AllFramesPose.append(pose)
+for i in range(1, frame_num-1):
     pose = ICP_point_to_point(AllFramesPointsCloud[i], AllFramesPointsCloud[i+1])
-    AllFramesPose.append(pose)
+    temp = np.dot(AllFramesPose[i-1], pose)
+    AllFramesPose.append(temp)
 
 # Global Transform matrix
+# from frame i to world
 Global_Trans = []
-pose = np.eye(4)
 for i in range(frame_num-1):
-    pose = np.dot(pose, np.linalg.inv(AllFramesPose[i]))
+    pose = np.linalg.inv(AllFramesPose[i])
     Global_Trans.append(pose)
 
 # init volume
