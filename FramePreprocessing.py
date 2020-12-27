@@ -13,7 +13,6 @@ def DepthMap(deepth):
 
 def PointCloud(depth,Inverse):
     """
-    将每帧照片生成点云，对应点的RGB信息分开存储
     :param depth: DepthMap of one frame
     :param camIn: Camera Intrinsic inverse K^{-1}
     :return: 3D Points Set shape->3*N

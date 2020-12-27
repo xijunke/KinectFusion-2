@@ -13,7 +13,7 @@ def FindRigidTransform(points_set_P, points_set_Q):
     """
     P = np.mean(points_set_P, axis=0, keepdims=True)
     Q = np.mean(points_set_Q, axis=0, keepdims=True)
-    # 减去质心做坐标变换
+    # mass center transform
     X = (points_set_P - P).T
     Y = (points_set_Q - Q).T
     M = X.dot(Y.T)
@@ -21,7 +21,7 @@ def FindRigidTransform(points_set_P, points_set_Q):
     U, Sigma, Vt = np.linalg.svd(M)
     R = np.dot(Vt.T, U.T)
     t = Q.T - R.dot(P.T)
-    trans = np.hstack((R, t)) # trans.shape = 3,4
+    trans = np.hstack((R, t))
     return trans
     pass
 
@@ -53,12 +53,12 @@ def ICP_point_to_point(points_set_P, points_set_Q):
     """
     :param points_set_P: 3D points cloud, ndarray 3*N
     :param points_set_Q: 3D points cloud, ndarray 3*N
-    :return: Trans [R|t] from P to Q, shape=(3,4)
-    迭代20次，获得相邻帧相对最优的变换矩阵
+    :return: Trans [R|t] from P to Q, shape is (4,4),the last row is [0|1]
+    iteration times = 20, find the best trans matrix between neighboring frames
     """
     iter_times = 20
     pose = FindRigidTransform(points_set_P, points_set_Q)
-    ind_P,ind_Q = FindMatchingPairs(points_set_P,points_set_Q,pose)
+    ind_P,ind_Q = FindMatchingPairs(points_set_P, points_set_Q, pose)
     matching_num = len(ind_P)
     for i in range(iter_times):
         temp_P = points_set_P[:,ind_P]
@@ -73,7 +73,7 @@ def ICP_point_to_point(points_set_P, points_set_Q):
             matching_num = temp_matching_num
         else:
             break
-    return pose
+    return np.vstack((pose, np.arrray([0,0,0,1])))
     pass
 
 if __name__ == '__main__':
