@@ -5,63 +5,76 @@ import cv2
 def ICP_point_to_plane():
     pass
 
+def FindRigidTransform(points_set_P, points_set_Q):
+    """
+    :param points_set_P: 3D points cloud, ndarray 3*N
+    :param points_set_Q: 3D points cloud, ndarray 3*N
+    :return: Trans [R|t] from P to Q, shape=(3,4)
+    """
+    P = np.mean(points_set_P, axis=0, keepdims=True)
+    Q = np.mean(points_set_Q, axis=0, keepdims=True)
+    # 减去质心做坐标变换
+    X = (points_set_P - P).T
+    Y = (points_set_Q - Q).T
+    M = X.dot(Y.T)
 
-def ICP(P1, P2, max_iter=20, dist_thresh=20):
-    '''
-    :param P1:  n*3
-    :param P2:  n*3
-    :param max_iter: 100
-    :return R,t
-    '''
+    U, Sigma, Vt = np.linalg.svd(M)
+    R = np.dot(Vt.T, U.T)
+    t = Q.T - R.dot(P.T)
+    trans = np.hstack((R, t)) # trans.shape = 3,4
+    return trans
+    pass
 
-    len = P2.shape[0]
-    try:
-        kdt = KDTree(P1, metric='euclidean')
-    except:
-        print('length of P1', len(P1))
-        print('2D点的数据过少')
-        raise Exception
-    Trans = np.hstack([np.eye(2), np.zeros((2, 1))])
-    print(Trans)
-    pre_num = 0
-    pre_Trans = Trans
-    pre_mean_error = 100
-    thresh = 80
-    for i in range(max_iter):
-        if (i > 2):
-            thresh = dist_thresh
-        P2_tmp = Trans.dot(np.hstack((P2, np.ones((len, 1)))).T).T
-        dist, ind_src = kdt.query(P2_tmp, k=1, return_distance=True)
-        dist = np.squeeze(dist)
-        ind_src = np.squeeze(ind_src)
+def FindMatchingPairs(points_set_P,points_set_Q,pose, thresh=20):
+    """
+    :param points_set_P: 3D points cloud, ndarray 3*N
+    :param points_set_Q: 3D points cloud, ndarray 3*N
+    :param pose: Trans [R|t] from P to Q shape=(3,4)
+    :param thresh: distance threshold of filtering matching pairs
+    :return: matching pairs index -> ind_P,ind_Q
+    """
+    P = np.vstack((points_set_P,np.ones((1,points_set_P.shape[1]))))
+    P_projection = pose.dot(P)
+    kdt = KDTree(points_set_Q, metric='euclidean')
+    dist,ind = kdt.query(P_projection,k=1,return_distance=True)
+    ind_P = []
+    ind_Q = []
+    mean_error = 0
+    for i in range(dist):
+        if dist[i] < thresh:
+            ind_P.append(i)
+            ind_Q.append(ind[i])
+            mean_error += dist[i]
+    mean_error /= len(ind_P)
+    return ind_P,ind_Q
+    pass
 
-        ind_dst = np.arange(0, len)
-
-        ind = np.squeeze(dist < thresh)
-        mean_error = np.mean(dist[ind])
-        if (mean_error > pre_mean_error):
+def ICP_point_to_point(points_set_P, points_set_Q):
+    """
+    :param points_set_P: 3D points cloud, ndarray 3*N
+    :param points_set_Q: 3D points cloud, ndarray 3*N
+    :return: Trans [R|t] from P to Q, shape=(3,4)
+    迭代20次，获得相邻帧相对最优的变换矩阵
+    """
+    iter_times = 20
+    pose = FindRigidTransform(points_set_P, points_set_Q)
+    ind_P,ind_Q = FindMatchingPairs(points_set_P,points_set_Q,pose)
+    matching_num = len(ind_P)
+    for i in range(iter_times):
+        temp_P = points_set_P[:,ind_P]
+        temp_Q = points_set_Q[:,ind_Q]
+        temp_pose = FindRigidTransform(temp_P,temp_Q)
+        temp_ind_P, temp_ind_Q = FindMatchingPairs(points_set_P, points_set_Q, pose)
+        temp_matching_num = len(temp_ind_P)
+        if temp_matching_num > matching_num:
+            pose = temp_pose
+            ind_P = temp_ind_P
+            ind_Q = temp_ind_Q
+            matching_num = temp_matching_num
+        else:
             break
-
-        pre_mean_error = mean_error
-        ind_src = ind_src[ind]
-        ind_dst = ind_dst[ind]
-        cur_num = np.array(ind_src).shape[0]
-        pre_num = max(pre_num, cur_num)
-
-        pre_Trans = Trans
-        Trans = cv2.estimateAffine2D(P2[ind_dst], P1[ind_src])[0]
-
-    # print('ICP error',mean_error)
-    # print('iteraton times',i)
-    P2_tmp = pre_Trans.dot(np.hstack([P2, np.ones((len, 1))]).T).T
-    dist, ind_src = kdt.query(P2_tmp, k=1, return_distance=True)
-    dist = np.squeeze(dist)
-    ind_src = np.squeeze(ind_src)
-    ind_dst = np.arange(0, len)
-    ind = np.squeeze(dist < thresh)
-    ind_src = ind_src[ind]
-    ind_dst = ind_dst[ind]
-    return ind_src, ind_dst
+    return pose
+    pass
 
 if __name__ == '__main__':
-    ICP(np.zeros((3,3)),np.zeros((3,3)),2)
+    pass

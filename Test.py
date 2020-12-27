@@ -1,9 +1,8 @@
 import numpy as np
 
 if __name__ == '__main__':
-    a = []
-    for i in range(3):
-        a.append([])
-        for j in range(3):
-            a[i].append(j)
-    print(a[1][1])
+    a = np.arange(5)
+    b = np.vstack((a,np.zeros((1,5))))
+    ind = [1,2,4]
+    c = b[:,ind]
+    print(c)

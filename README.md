@@ -64,7 +64,7 @@ $\mathbf{s}$ is source points cloud, $\mathbf{d}$ is destination points cloud, $
 
 ## Find the Surface
 
-Find the surface via **Ray Casing** if we choose point-plane ICP
+Find the surface via **Ray Casting** if we choose point-plane ICP
 
 * step = $\mu$ instead of 1 voxel
 
@@ -118,3 +118,4 @@ What's more, restrict the $\mathrm{W}_{k}(\mathbf{p})$ by $\mathrm{W}_{k}(\mathb
 ## Results
 
 Marching Cubes to mesh
+https://scikit-image.org/docs/dev/auto_examples/edges/plot_marching_cubes.html
