@@ -1,13 +1,12 @@
 import numpy as np
 import cv2
 import time
+import random
 
 def DepthMap(deepth):
     # 双边滤波
     dmap = cv2.bilateralFilter(deepth,5,35,35)
-
     # 如果深度值越界，需要提前处理，不要传递给后续点云生成
-
     pass
     return dmap
 
@@ -19,19 +18,26 @@ def PointCloud(depth,Inverse):
     """
     h, w = depth.shape
     num = h*w
+    v_ind, u_ind = np.nonzero(depth)
+    samples = random.sample(range(len(v_ind)), 1000)
+    v_samples = v_ind[samples]
+    u_samples = u_ind[samples]
+    print('u_samples shape', u_samples.shape)
     DepthMap = depth.reshape((1, num))
+
+    depth_ind = []
+    for i in range(len(v_samples)):
+        v = v_samples[i]
+        u = u_samples[i]
+        index = v*w+u
+        depth_ind.append(index)
+    DepthMap = DepthMap[:, depth_ind]
+    print('Depth shape', DepthMap.shape)
     # Inverse = np.linalg.inv(camIn)
-    u = np.zeros((1, w))
-    v = np.arange(w)
-    boardv = np.tile(v, (1, h))
-
-    for i in range(1, h):
-        u = np.concatenate((u, np.full((1, w), i)))
-    uvdMap = np.vstack(u, boardv, DepthMap)
-    print('check uvdMap shape', uvdMap.shape)
-
+    uvdMap = np.vstack((u_samples, v_samples, DepthMap))
     Points = np.dot(Inverse, uvdMap)
     print('check PointsCloud shape', Points.shape)
+    return Points
     pass
 
 def NormalMap(Points,h,w):
